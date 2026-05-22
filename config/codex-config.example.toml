@@ -1,0 +1,20 @@
+# Codex Memory Enhancer — Optional Profile Configuration
+# Add this to ~/.codex/config.toml (or merge into your existing config)
+#
+# Then launch: codex -p memory
+# Or use the wrapper: codex-memory (auto-restores context + launches with this profile)
+
+[profiles.memory]
+model = "gpt-5.5"
+
+[profiles.memory.project_doc]
+# === LOCAL MEMORY SYSTEM ===
+# This Codex environment has $local-memory skill installed.
+#
+# SESSION START: Run `python3 ~/.codex/skills/local-memory/memory.py recent -n 5`
+#   and `python3 ~/.codex/skills/local-memory/memory.py stats`
+#
+# DURING SESSION:
+# - Search before asking: `python3 ~/.codex/skills/local-memory/memory.py search "query"`
+# - Save context: `python3 ~/.codex/skills/local-memory/memory.py save "content" -k "key" -c cat -t "tags"`
+# - NEVER store API keys, tokens, passwords (script auto-rejects)

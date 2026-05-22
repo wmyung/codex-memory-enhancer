@@ -1,0 +1,20 @@
+#!/bin/bash
+# codex-memory: Codex wrapper with automatic local-memory context restoration
+# Installed by: https://github.com/wmyung/codex-memory-enhancer
+# Usage: codex-memory [args...]
+
+MEMORY_SCRIPT="$HOME/.codex/skills/local-memory/memory.py"
+
+if [ ! -f "$MEMORY_SCRIPT" ]; then
+    echo "❌ Memory script not found at $MEMORY_SCRIPT"
+    echo "   Install: bash <(curl -s https://raw.githubusercontent.com/wmyung/codex-memory-enhancer/main/install.sh)"
+    exit 1
+fi
+
+echo "🧠 Restoring memory context..."
+python3 "$MEMORY_SCRIPT" recent -n 5
+echo ""
+python3 "$MEMORY_SCRIPT" stats
+echo ""
+
+exec codex -p memory "$@"
