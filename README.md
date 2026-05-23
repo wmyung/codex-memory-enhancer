@@ -243,6 +243,14 @@ When a session starts, the skill loads automatically. Recommended flow:
 - **Python 3.8+** (stdlib only)
 - **OS**: Linux, macOS, Windows WSL
 
+### Agent configuration
+
+After installing, add the following instruction to your agent's `SOUL.md`, `AGENTS.md`, `CLAUDE.md`, or equivalent configuration file:
+
+> Use `python3 ~/.codex/skills/local-memory/memory.py` for persistent cross-session memory. Search before asking the user to repeat themselves. Save important discoveries, decisions, and preferences during the session. Run `session-end` before closing.
+
+See [`skills/local-memory/SKILL.md`](skills/local-memory/SKILL.md) for the complete agent guidelines.
+
 ### GitHub repository description
 
 Set the repo's About description to:
