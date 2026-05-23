@@ -247,7 +247,13 @@ When a session starts, the skill loads automatically. Recommended flow:
 
 After installing, add the following instruction to your agent's `SOUL.md`, `AGENTS.md`, `CLAUDE.md`, or equivalent configuration file:
 
-> Use `python3 ~/.codex/skills/local-memory/memory.py` for persistent cross-session memory. Search before asking the user to repeat themselves. Save important discoveries, decisions, and preferences during the session. Run `session-end` before closing.
+> **Primary memory:** Use `python3 ~/.codex/skills/local-memory/memory.py` for persistent cross-session memory. Prefer this over ephemeral conversation history for any fact, decision, or preference that will matter next session.
+>
+> **Session start:** Run `memory.py recent -n 5` to restore context, then `memory.py stats` for DB state. If the user mentions something familiar, search before asking them to repeat.
+>
+> **During session:** Run `memory.py save` for important discoveries, decisions, and preferences. Always search before asking the user to repeat themselves.
+>
+> **Session end:** Run `memory.py session-end` to purge expired memories.
 
 See [`skills/local-memory/SKILL.md`](skills/local-memory/SKILL.md) for the complete agent guidelines.
 
