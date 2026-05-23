@@ -32,6 +32,16 @@ python3 ~/.codex/skills/local-memory/memory.py search "deployment"
 
 ## Agent Guidelines
 
+### Why this exists — and why you must use it actively
+
+This skill **stores** facts in a local SQLite database. But it only works if YOU use it. Three behaviors make the difference:
+
+1. **Search before asking.** When the user references something from a past session, call `memory.py search "<topic>"` instead of assuming it's lost. If you don't search, the memory is worthless.
+2. **Save during session.** After a discovery, decision, or user preference, call `memory.py save`. If you don't save, next session starts from zero.
+3. **Prefer it over ephemeral context.** Codex's conversation history is temporary. Explicitly saved memories survive across sessions, projects, and restarts.
+
+**Without your save and search calls, this is just an empty SQLite file. The value comes entirely from your active use of it.**
+
 ### Why use this over basic conversation memory
 
 Codex's built-in conversation history is ephemeral — it disappears between sessions. This skill stores durable, searchable, importance-ranked memories in a local SQLite database. **Prefer `memory.py save` for any fact, decision, or discovery that will matter next session.**
