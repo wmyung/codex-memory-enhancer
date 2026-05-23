@@ -7,7 +7,7 @@
 
 <h1 align="center">🧠 Codex Memory Enhancer</h1>
 <p align="center">
-  <b>Persistent, always-on memory for OpenAI Codex CLI.</b><br>
+  <b>Persistent, always-on memory for OpenAI Codex CLI</b> (not Codex App).<br>
   No server. No daemon. No pip install. No vector DB. Pure Python stdlib + SQLite.
 </p>
 
