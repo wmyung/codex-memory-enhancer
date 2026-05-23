@@ -30,20 +30,22 @@ DEFAULT_DB = BASE_DIR / "memory.sqlite3"
 DANGEROUS_PATTERNS = [
     re.compile(r'(?:api[_-]?key|apikey|secret|token|password|passwd|pwd|credential|private_key)'
                r"['\"]?\s*[:=]\s*['\"]?\S{12,}", re.I),
-    re.compile(r'sk-[A-Za-z0-9]{20,}'),
-    re.compile(r'ghp_[A-Za-z0-9]{36,}'),
+    re.compile(r'sk-[A-Za-z0-9-_]{15,}'),    # OpenAI: sk-... or sk-proj-...
+    re.compile(r'ghp_[A-Za-z0-9]{15,}'),     # GitHub PAT
+    re.compile(r'gho_[A-Za-z0-9]{15,}'),     # GitHub OAuth
+    re.compile(r'ghu_[A-Za-z0-9]{15,}'),     # GitHub user-to-server
     re.compile(r'xox[baprs]-[A-Za-z0-9\-]{10,}'),
     re.compile(r'-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----'),
     re.compile(r'AKIA[0-9A-Z]{16}'),
     re.compile(r'[A-Za-z0-9+/]{40,}={0,2}'),
 ]
 
-_TTL_UNITS = {"h": 3600, "d": 86400, "w": 604800, "m": 2592000}
+_TTL_UNITS = {"s": 1, "h": 3600, "d": 86400, "w": 604800, "m": 2592000}
 
 
 def parse_ttl(ttl_str: str) -> float | None:
     """Parse '7d' → seconds, '30m' → seconds, etc."""
-    m = re.match(r'^(\d+)\s*(h|d|w|m)?$', ttl_str.strip().lower())
+    m = re.match(r'^(\d+)\s*(s|h|d|w|m)?$', ttl_str.strip().lower())
     if not m:
         return None
     val = int(m.group(1))
@@ -67,8 +69,15 @@ def get_db(project: str = "") -> sqlite3.Connection:
     db.row_factory = sqlite3.Row
     db.execute("PRAGMA journal_mode=WAL")
     db.execute("PRAGMA synchronous=NORMAL")
+    # Migration first: add columns if missing (v1→v2)
+    _migrate_schema(db)
+    # Then init schema (including FTS triggers)
     _init_schema(db)
-    # Migration: add columns if missing (v1→v2)
+    return db
+
+
+def _migrate_schema(db):
+    """Add new columns to existing tables (v1→v2 migration)."""
     try:
         cols = [r[1] for r in db.execute("PRAGMA table_info(memories)").fetchall()]
         if "importance" not in cols:
@@ -77,7 +86,6 @@ def get_db(project: str = "") -> sqlite3.Connection:
             db.execute("ALTER TABLE memories ADD COLUMN ttl REAL DEFAULT NULL")
     except sqlite3.OperationalError:
         pass
-    return db
 
 
 def _init_schema(db):
@@ -88,7 +96,7 @@ def _init_schema(db):
             content     TEXT NOT NULL,
             category    TEXT DEFAULT 'general',
             tags        TEXT DEFAULT '',
-            importance  INTEGER DEFAULT 1,
+            importance  INTEGER DEFAULT 3,
             ttl         REAL DEFAULT NULL,
             created_at  REAL NOT NULL,
             updated_at  REAL NOT NULL,
@@ -98,22 +106,28 @@ def _init_schema(db):
         CREATE INDEX IF NOT EXISTS idx_memories_updated ON memories(updated_at DESC);
         CREATE INDEX IF NOT EXISTS idx_memories_importance ON memories(importance DESC);
     """)
-    # FTS5 (best-effort)
+    # FTS5 (best-effort — may fail on older SQLite or existing v1 schema)
     try:
         db.executescript("""
             CREATE VIRTUAL TABLE IF NOT EXISTS memories_fts USING fts5(
                 content, key, tags,
                 content=memories, content_rowid=id
             );
-            CREATE TRIGGER IF NOT EXISTS memories_ai AFTER INSERT ON memories BEGIN
+        """)
+        # Recreate FTS triggers safely (drop first to avoid stale v1 triggers)
+        db.executescript("""
+            DROP TRIGGER IF EXISTS memories_ai;
+            DROP TRIGGER IF EXISTS memories_ad;
+            DROP TRIGGER IF EXISTS memories_au;
+            CREATE TRIGGER memories_ai AFTER INSERT ON memories BEGIN
                 INSERT INTO memories_fts(rowid, content, key, tags)
                 VALUES (new.id, new.content, new.key, new.tags);
             END;
-            CREATE TRIGGER IF NOT EXISTS memories_ad AFTER DELETE ON memories BEGIN
+            CREATE TRIGGER memories_ad AFTER DELETE ON memories BEGIN
                 INSERT INTO memories_fts(memories_fts, rowid, content, key, tags)
                 VALUES ('delete', old.id, old.content, old.key, old.tags);
             END;
-            CREATE TRIGGER IF NOT EXISTS memories_au AFTER UPDATE ON memories BEGIN
+            CREATE TRIGGER memories_au AFTER UPDATE ON memories BEGIN
                 INSERT INTO memories_fts(memories_fts, rowid, content, key, tags)
                 VALUES ('delete', old.id, old.content, old.key, old.tags);
                 INSERT INTO memories_fts(rowid, content, key, tags)
@@ -121,7 +135,7 @@ def _init_schema(db):
             END;
         """)
     except sqlite3.OperationalError:
-        pass
+        pass  # FTS5 not available
 
 
 def _is_dangerous(text: str) -> str | None:
