@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-  <code>bash install.sh</code> → <code>codex-memory</code> → Codex remembers everything. Done.
+  <code>bash install.sh</code> → Codex remembers everything. Done.
 </p>
 
 ---
@@ -21,53 +21,12 @@
 
 **Codex CLI has no long-term memory.** Every session starts from scratch. You tell it the same project context, the same preferences, the same constraints — over and over.
 
-Vibe coding loses its magic when the agent has amnesia.
-
 Existing solutions are overkill:
 - Vector DBs (Chroma, Qdrant) → need a server, pip install, API, embedding model
 - LangChain memory → framework lock-in, heavy
-- LLM Wiki (Karpathy) → human-readable knowledge base, **not** an agent's working memory
+- LLM Wiki → human-readable knowledge base, **not** an agent's working memory
 
 **This is different.** It's not a wiki. It's not RAG. It's a **persistent scratchpad** that Codex uses automatically — session to session, project to project.
-
----
-
-## Demo
-
-```bash
-# Monday — working on auth refactor
-codex-memory
-# Codex restores context, you work, Codex auto-saves progress
-
-# Tuesday — new session
-codex-memory
-# 🧠 "Let me check what you were working on..."
-# → Shows: "Completed JWT auth refactor - middleware + token refresh + tests"
-# → Codex picks up right where you left off
-```
-
-[▶️ 23-second asciicast] (TODO: add screencast)
-
----
-
-## Quick Install
-
-```bash
-git clone https://github.com/wmyung/codex-memory-enhancer.git
-cd codex-memory-enhancer
-bash install.sh
-```
-
-**What the installer does:**
-1. Copies `memory.py` + `SKILL.md` → `~/.codex/skills/local-memory/`
-2. Installs `codex-memory` wrapper → `~/.local/bin/codex-memory`
-3. Adds `[profiles.memory]` → `~/.codex/config.toml`
-4. Adds `codexm` alias → `~/.bashrc`
-
-### One-liner (curl)
-```bash
-bash <(curl -s https://raw.githubusercontent.com/wmyung/codex-memory-enhancer/main/install.sh)
-```
 
 ---
 
@@ -76,22 +35,42 @@ bash <(curl -s https://raw.githubusercontent.com/wmyung/codex-memory-enhancer/ma
 ### 🧠 Session-to-session memory
 Codex remembers projects, decisions, discoveries, preferences, and errors across sessions. Your context never dies.
 
+### 📁 Per-project isolated databases
+```
+python3 memory.py save "analysis results: h2=0.15" -p B003 -k "project:ldsc" -i 4
+python3 memory.py save "deployment config: port 8080" -p my-app -c config
+```
+Each project gets its own SQLite file. No cross-contamination.
+
+### ⭐ Importance scoring (1–5)
+High-importance memories (4+) get priority in context injection. Low-importance (1–2) stays searchable but doesn't clutter context.
+
+```
+-i 5 → Always included in session context
+-i 1 → Searchable but not in condensed view
+```
+
+### ⏰ TTL auto-expiry
+Memories self-destruct after a duration:
+```
+python3 memory.py save "temp build config" -k "build:temp" -i 2 --ttl 7d
+```
+
 ### 🔍 FTS5 full-text search
 SQLite FTS5 ranks results by relevance. Faster and smarter than grepping markdown files.
 
-```bash
-python3 memory.py search "jwt token refresh"
-# → 1. "Completed JWT auth refactor" (score 0.00)
-# → 2. "Discovered: token refresh race condition" (score -1.24)
+```
+python3 memory.py search "deployment issue"
+```
+
+### 🏷️ Tag filtering
+```
+python3 memory.py search "auth" -t "project:my-app"
+python3 memory.py list -c preference
 ```
 
 ### 🛡️ Built-in secret filter
 **API keys, tokens, passwords, private keys cannot be stored.** The script rejects them at the content level — not as an afterthought, but as a hard guarantee.
-
-```bash
-python3 memory.py save "my api key is sk-abc123..."
-# → ✗ Refused: content matches dangerous pattern 'sk-abc123...'
-```
 
 Patterns blocked: `sk-*` (OpenAI), `ghp_*` (GitHub), `AKIA*` (AWS), `xox[baprs]-*` (Slack), `-----BEGIN ... PRIVATE KEY-----`, base64 secrets.
 
@@ -106,80 +85,78 @@ Patterns blocked: `sk-*` (OpenAI), `ghp_*` (GitHub), `AKIA*` (AWS), `xox[baprs]-
 # ❌ A server process
 
 # What you DO need:
-# ✅ Python 3.8+ (stdlib only — sqlite3, json, re, argparse — all built-in)
+# ✅ Python 3.8+ (stdlib only)
 ```
 
-### 📦 Storage footprint: one file, 40KB
-```
-~/.codex/skills/local-memory/memory.sqlite3  ← literally the only file
-```
-
-40KB empty. ~200KB after months of use. No WAL explosion. No compaction needed.
+### 🔬 Optional semantic search
+If `sentence-transformers` is installed, `search --semantic` uses cosine similarity for semantic matching.
 
 ### 🔄 Portable
 ```bash
-# Move to another machine
-scp user@server:.codex/skills/local-memory/memory.sqlite3 .
-
-# Export to anything
+# Export
 python3 memory.py export -f markdown > memories.md
 python3 memory.py export -f json > memories.json
-```
 
-No vendor lock-in. Your memory is a SQLite file — the most portable database format on earth.
-
----
-
-## How It Works
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  codex-memory (wrapper)                                      │
-│                                                              │
-│  1. python3 memory.py recent -n 5   ← "What was I doing?"    │
-│  2. python3 memory.py stats         ← "How's the DB?"        │
-│  3. codex -p memory "$@"            ← Launch Codex           │
-│         │                                                     │
-│         └── $local-memory skill auto-loaded at Codex startup  │
-│               ├─ Session start → recent + stats               │
-│               ├─ During work → auto-save context              │
-│               └─ Before asking → search memory first           │
-└─────────────────────────────────────────────────────────────┘
-```
-
-**Storage layer:**
-```
-┌──────────────┐     ┌──────────────────┐     ┌──────────────┐
-│  Codex CLI   │────▶│   memory.py      │────▶│  SQLite FTS5 │
-│  (codex exec)│     │  (431 lines)     │     │  (no server) │
-└──────────────┘     └──────────────────┘     └──────────────┘
+# Import
+python3 memory.py import -f memories.json
 ```
 
 ---
 
-## Manual Commands
+## Quick Install
 
 ```bash
-# Save
-python3 memory.py save "User prefers 2-space YAML" -k "pref:yaml-style" -c preference -t "style,convention"
+git clone <repo-url>
+cd codex-memory-enhancer
+bash install.sh
+```
 
-# Search (FTS5)
-python3 memory.py search "deployment issue"
+**What the installer does:**
+1. Copies `memory.py` + `SKILL.md` → `~/.codex/skills/local-memory/`
+2. Creates `projects/` directory for per-project DBs
+
+---
+
+## Commands
+
+```bash
+# Save a memory
+python3 memory.py save "<content>" \
+  -k "<unique-key>" -c <category> -t "<tag1>,<tag2>" \
+  -i <1-5> [--ttl 7d] [-p PROJECT]
+
+# Search (FTS5 or LIKE fallback)
+python3 memory.py search "<query>" [-n 10] [-t TAG] [--semantic] [-p PROJECT]
 
 # List recent
-python3 memory.py recent
+python3 memory.py recent [-n 10] [-p PROJECT]
+
+# List all
+python3 memory.py list [-n 20] [-c CATEGORY] [-p PROJECT]
 
 # Read details
-python3 memory.py read 7
+python3 memory.py read <id> [-p PROJECT]
 
 # Delete
-python3 memory.py forget 7
+python3 memory.py forget <id> [-p PROJECT]
 
 # DB stats
-python3 memory.py stats
+python3 memory.py stats [-p PROJECT]
 
-# Full export
-python3 memory.py export -f markdown
+# Context injection (high-importance + recent)
+python3 memory.py condense [-n 5] [-p PROJECT]
+
+# Export
+python3 memory.py export [-f json|markdown] [-p PROJECT]
+
+# Import
+python3 memory.py import -f export.json [-p PROJECT]
+
+# Purge expired
+python3 memory.py cleanup [--dry-run] [-p PROJECT]
+
+# Session end
+python3 memory.py session-end [-p PROJECT]
 ```
 
 ### Categories
@@ -187,67 +164,49 @@ python3 memory.py export -f markdown
 
 ---
 
-## Comparison: LLM Wiki vs Codex Memory Enhancer
+## Example Workflow
 
-Two different tools for two different jobs. Here's how they stack up:
+```bash
+# Session start — restore context
+python3 ~/.codex/skills/local-memory/memory.py condense -n 5
+python3 ~/.codex/skills/local-memory/memory.py stats
 
-| Dimension | LLM Wiki (Karpathy) | Codex Memory Enhancer |
-|-----------|--------------------|----------------------|
-| **What it stores** | Structured knowledge (concepts, entities, comparisons) | Working context (tasks, decisions, discoveries) |
-| **Storage format** | Markdown files in a directory tree | Single SQLite file with FTS5 index |
-| **Who reads it** | **Humans + AI** — opens in Obsidian, VS Code, any editor | **AI only** — accessed via `memory.py` CLI |
-| **Who writes it** | Agent + human curation, ingest → summarize → file | Agent auto-saves during Codex sessions |
-| **Search** | `grep` / `search_files` over markdown | FTS5 ranked full-text search |
-| **Structure** | SCHEMA.md + index.md + log.md (strict conventions) | Key-value + category + tags (flexible) |
-| **Safety filter** | None | Auto-rejects API keys, tokens, secrets |
-| **Footprint** | Grows with every ingested source | ~40KB empty, ~200KB heavy use |
-| **Portability** | Copy markdown files | Export to JSON or Markdown |
-| **Best for** | Knowledge management, research, long-term reference | Session continuity, project context, working memory |
-| **Dependencies** | None (markdown files) | None (Python stdlib) |
-| **Setup time** | Manual directory creation + SCHEMA | `bash install.sh` — 3 seconds |
+# Save a discovery
+python3 ~/.codex/skills/local-memory/memory.py save \
+  "SQLite reads are 10x faster with index on updated_at" \
+  -k "discovery:sqlite-index" -c note -t "sqlite,performance" -i 4
 
-### When to use which
+# Save a user preference
+python3 ~/.codex/skills/local-memory/memory.py save \
+  "User prefers 2-space YAML, 4-space Python" \
+  -k "pref:indentation" -c preference -t "style,convention" -i 5
 
-| Scenario | Use |
-|----------|:---:|
-| "I want a personal Wikipedia for my research" | ✅ **LLM Wiki** |
-| "Codex keeps forgetting what I was working on" | ✅ **Memory Enhancer** |
-| "I need to browse my notes in Obsidian" | ✅ **LLM Wiki** |
-| "I want Codex to auto-save context without me thinking about it" | ✅ **Memory Enhancer** |
-| Both! | **Use both** — export from Memory Enhancer, ingest into LLM Wiki |
+# Per-project context
+python3 ~/.codex/skills/local-memory/memory.py -p B003 save \
+  "Analysis results: correlation r=0.42, p<0.001" \
+  -k "analysis:correlation" -c pattern -i 4 --ttl 90d
 
-### Complementary workflow
-
+# Search before asking user to repeat themselves
+python3 ~/.codex/skills/local-memory/memory.py search "deployment"
 ```
-Codex Memory Enhancer          LLM Wiki
-┌──────────────────┐          ┌──────────────────┐
-│ Session memory   │──export─▶│ Knowledge base   │
-│ (auto, ephemeral)│  markdow │ (curated, perman)│
-└──────────────────┘          └──────────────────┘
-```
-
-Weekly or monthly: `python3 memory.py export -f markdown > ~/wiki/raw/memory-dump/YYYY-MM.md` → LLM Wiki ingests it. Short-term memory becomes long-term knowledge.
 
 ---
 
-## Comparison: Other Approaches
+## Session Start Protocol (for Codex)
 
-| Solution | Server | pip install | Setup time | Auto-save | Secret filter | Offline |
-|----------|:-----:|:-----------:|:----------:|:---------:|:-------------:|:-------:|
-| **Codex Memory Enhancer** | ❌ | ❌ | **3 sec** | ✅ | ✅ | ✅ |
-| LLM Wiki (Karpathy) | ❌ | ❌ | 5 min | ❌ | ❌ | ✅ |
-| ChromaDB | ✅ | ✅ | 30 min | ❌ | ❌ | ✅ |
-| Mem0 | ✅ | ✅ | 15 min | ❌ | ❌ | ❌ |
-| LangChain Memory | ❌ | ✅ | 10 min | ❌ | ❌ | ✅ |
-| OpenAI Assistants | ✅ | ❌ | 5 min | ❌ | ❌ | ❌ |
-| Claude Projects | ✅ | ❌ | 1 min | ❌ | ❌ | ❌ |
+When a session starts, the skill loads automatically. Recommended flow:
+
+1. Run `python3 ~/.codex/skills/local-memory/memory.py condense -n 5` for context
+2. Run `python3 ~/.codex/skills/local-memory/memory.py stats` for DB state
+3. Search before asking: `python3 ~/.codex/skills/local-memory/memory.py search "<query>"`
+4. Save context on task completion
 
 ---
 
 ## Requirements
 
 - **Codex CLI** (v0.128.0+): `npm install -g @openai/codex`
-- **Python 3.8+** (stdlib only — nothing to install)
+- **Python 3.8+** (stdlib only)
 - **OS**: Linux, macOS, Windows WSL
 
 ---
@@ -256,23 +215,50 @@ Weekly or monthly: `python3 memory.py export -f markdown > ~/wiki/raw/memory-dum
 
 ```
 codex-memory-enhancer/
-├── install.sh                              ← 3-second install
+├── install.sh                    ← One-shot install
+├── README.md                     ← This file
+├── LICENSE                       ← MIT
 ├── skills/local-memory/
-│   ├── SKILL.md                            ← Codex skill definition (loaded at startup)
-│   └── memory.py                           ← Memory engine (431 lines, stdlib only)
-├── scripts/codex-memory                     ← Wrapper: auto-restore + launch
-└── config/codex-config.example.toml        ← Optional Codex profile
+│   ├── SKILL.md                  ← Codex skill definition
+│   └── memory.py                 ← Memory engine (stdlib only)
+├── scripts/
+│   └── codex-memory              ← Optional wrapper script
+├── config/
+│   └── codex-config.example.toml ← Optional Codex profile
+└── .gitignore
 ```
 
 ---
 
-## Roadmap (ideas welcome)
+## Data Location
 
-- [ ] **TTL / auto-expiry**: Memories older than N days get archived or de-prioritized
-- [ ] **Import from Claude Code / ChatGPT**: Migrate external context into the DB
-- [ ] **CLI improvements**: Interactive `browse` mode, batch tag editor
-- [ ] **Obsidian sync**: Auto-export to a markdown vault for human browsing
-- [ ] **Embeddings (optional)**: Plug in `sentence-transformers` for true semantic search if installed
+| Data | Path |
+|------|------|
+| Default DB | `~/.codex/skills/local-memory/memory.sqlite3` |
+| Per-project DBs | `~/.codex/skills/local-memory/projects/<project>.sqlite3` |
+| Skill definition | `~/.codex/skills/local-memory/SKILL.md` |
+| Script | `~/.codex/skills/local-memory/memory.py` |
+
+---
+
+## v1 → v2 Migration
+
+The v2.0 upgrade is backward-compatible. Existing v1 databases are automatically detected and migrated:
+- New columns: `importance` (default: 3), `ttl` (default: NULL) — added via ALTER TABLE
+- Project DBs are created automatically on `-p PROJECT` usage
+- FTS triggers are recreated on next access
+
+No manual migration needed. Run `python3 memory.py stats` to verify.
+
+---
+
+## Roadmap
+
+- [ ] Interactive `browse` mode
+- [ ] Batch tag editor
+- [ ] Obsidian sync
+- [ ] Richer semantic search with caching
+- [ ] Memory consolidation (merge duplicates)
 
 PRs welcome. Ideas welcome.
 
@@ -280,7 +266,6 @@ PRs welcome. Ideas welcome.
 
 ## Related
 
-- **[Hermes Agent](https://github.com/NousResearch/hermes-agent)** — multi-provider agent that inspired this. Has a built-in Memory Enhancer plugin.
-- **[Codex CLI](https://github.com/openai/codex)** — OpenAI's autonomous coding agent CLI. This skill runs inside it.
-- **[llm-wiki (Karpathy)](https://gist.github.com/karpathy/442a6bf555914e8939891c11519de94f)** — human-readable knowledge base in markdown.
+- **[Hermes Agent](https://github.com/NousResearch/hermes-agent)** — multi-provider agent framework with built-in Memory Enhancer plugin
+- **[Codex CLI](https://github.com/openai/codex)** — OpenAI's autonomous coding agent CLI
 - **[SQLite FTS5](https://www.sqlite.org/fts5.html)** — the search engine behind it all. No vector DB needed.

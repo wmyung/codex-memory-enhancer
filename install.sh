@@ -8,7 +8,7 @@ set -euo pipefail
 SKILL_DIR="$HOME/.codex/skills/local-memory"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-echo "🧠 Codex Memory Enhancer — Install"
+echo "🧠 Codex Memory Enhancer v2.0 — Install"
 echo ""
 
 # 1. Copy skill files
@@ -17,55 +17,31 @@ mkdir -p "$SKILL_DIR"
 cp "$SCRIPT_DIR/skills/local-memory/memory.py" "$SKILL_DIR/"
 cp "$SCRIPT_DIR/skills/local-memory/SKILL.md" "$SKILL_DIR/"
 
-# 2. Copy wrapper script
-echo "📁 Installing wrapper to ~/.local/bin/codex-memory..."
-mkdir -p "$HOME/.local/bin"
-cp "$SCRIPT_DIR/scripts/codex-memory" "$HOME/.local/bin/codex-memory"
-chmod +x "$HOME/.local/bin/codex-memory"
+# 2. Create projects directory for per-project DBs
+mkdir -p "$SKILL_DIR/projects"
 
-# 3. Optional: add Codex profile
-CONFIG_FILE="$HOME/.codex/config.toml"
-if [ -f "$CONFIG_FILE" ] && ! grep -q "profiles.memory" "$CONFIG_FILE" 2>/dev/null; then
-    echo "📝 Adding [profiles.memory] to $CONFIG_FILE..."
-    cat >> "$CONFIG_FILE" << 'TOMLEOF'
-
-[profiles.memory]
-model = "gpt-5.5"
-
-[profiles.memory.project_doc]
-# === LOCAL MEMORY SYSTEM ===
-# This Codex environment has $local-memory skill installed.
-#
-# SESSION START: Run `python3 ~/.codex/skills/local-memory/memory.py recent -n 5`
-#   and `python3 ~/.codex/skills/local-memory/memory.py stats`
-#
-# DURING SESSION:
-# - Search before asking: `python3 ~/.codex/skills/local-memory/memory.py search "query"`
-# - Save context: `python3 ~/.codex/skills/local-memory/memory.py save "content" -k "key" -c cat -t "tags"`
-# - NEVER store API keys, tokens, passwords (script auto-rejects)
-TOMLEOF
+# 3. Copy wrapper script (if exists)
+if [ -f "$SCRIPT_DIR/scripts/codex-memory" ]; then
+    echo "📁 Installing wrapper to ~/.local/bin/codex-memory..."
+    mkdir -p "$HOME/.local/bin"
+    cp "$SCRIPT_DIR/scripts/codex-memory" "$HOME/.local/bin/codex-memory"
+    chmod +x "$HOME/.local/bin/codex-memory"
 fi
 
-# 4. Optional: add alias to .bashrc
-if ! grep -q "codex-memory" "$HOME/.bashrc" 2>/dev/null; then
-    echo "📝 Adding codexm alias to ~/.bashrc..."
-    cat >> "$HOME/.bashrc" << 'ALIASEOF'
-
-# codex-memory: auto-restore memory context before Codex
-alias codexm='codex-memory'
-ALIASEOF
+# 4. Test the installation
+echo "🔍 Verifying installation..."
+if python3 -c "import sqlite3; print('✓ SQLite available')" 2>/dev/null; then
+    python3 "$SKILL_DIR/memory.py" stats 2>/dev/null && echo "✓ Memory system working" || echo "  (first run: will initialize on first use)"
+else
+    echo "⚠️  Python sqlite3 module not found. Install python3 with sqlite support."
 fi
 
 echo ""
 echo "✅ Installation complete!"
 echo ""
-echo "Usage:"
-echo "  codex-memory        # Auto-restore memory + launch Codex (recommended)"
-echo "  codex -p memory     # Launch with memory profile"
-echo ""
-echo "Inside Codex:"
-echo "  \$local-memory skill is auto-loaded."
-echo "  Just work normally — Codex will save/restore context."
-echo ""
-echo "To verify:"
+echo "Quick test:"
 echo "  python3 ~/.codex/skills/local-memory/memory.py stats"
+echo "  python3 ~/.codex/skills/local-memory/memory.py save 'Hello world' -k 'test:hello' -i 1"
+echo ""
+echo "Docs:"
+echo "  cat ~/.codex/skills/local-memory/SKILL.md"

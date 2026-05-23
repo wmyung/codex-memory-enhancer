@@ -1,15 +1,34 @@
 ---
 name: local-memory
-description: "Persistent session-to-session memory for Codex. No server, no daemon, no pip install. Remembers projects, decisions, discoveries, and context across sessions."
-version: 1.0.0
+description: "Persistent session-to-session memory for Codex. No server, no daemon, no pip install — pure Python stdlib. Supports project-isolated DBs, importance scoring, TTL expiry, and optional semantic search."
+version: 2.0.0
 ---
 
 # $local-memory — Persistent Memory for Codex
 
-**What this is:** A local SQLite-backed memory system that preserves context across Codex sessions. No server, no daemon, no pip install — pure Python stdlib.
+**What this is:** A local SQLite-backed memory system that preserves context across Codex sessions. No server, no daemon, no external dependencies — pure Python stdlib.
 
-**Data location:** `~/.codex/skills/local-memory/memory.sqlite3`
+**Data location:** `~/.codex/skills/local-memory/` (default) + `~/.codex/skills/local-memory/projects/*.sqlite3` (per-project)
+
 **Script:** `python3 ~/.codex/skills/local-memory/memory.py`
+
+## Quick Start
+
+```
+# Install (one-time)
+bash ~/.codex/skills/local-memory/install.sh
+
+# Session start — restore context
+python3 ~/.codex/skills/local-memory/memory.py recent -n 5
+
+# Save an important discovery
+python3 ~/.codex/skills/local-memory/memory.py save \
+  "DISCOVERY: reads are 10x faster with index on updated_at" \
+  -k "discovery:sqlite-index" -c note -t "sqlite,performance" -i 4
+
+# Search before asking the user to repeat themselves
+python3 ~/.codex/skills/local-memory/memory.py search "deployment"
+```
 
 ## Session Start Protocol
 
@@ -23,54 +42,79 @@ When starting a session with `$local-memory`:
 
 ### Save a memory
 ```
-python3 ~/.codex/skills/local-memory/memory.py save "<content>" -k "<unique-key>" -c <category> -t "<tag1>,<tag2>"
+python3 ~/.codex/skills/local-memory/memory.py save "<content>" \
+  -k "<unique-key>" -c <category> -t "<tag1>,<tag2>" \
+  -i <1-5> [--ttl 7d] [-p PROJECT]
 ```
 - `-k` (key): Unique identifier, e.g. `project:my-project`, `decision:use-fastapi`
 - `-c` (category): `general`, `preference`, `entity`, `event`, `case`, `pattern`, `project`, `task`, `decision`, `note`, or any custom
-- `-t` (tags): Comma-separated for filtering
-
-**When to save:**
-- Starting/finishing a task — save what was done
-- User gives important context, preferences, or constraints
-- You discover a non-trivial insight (tool quirk, workaround)
-- A decision is made that affects future work
+- `-t` (tags): Comma-separated for filtering (e.g. `project:B003,type:result`)
+- `-i` (importance): 1–5, default 3. 4+ = high priority, always included in condense
+- `--ttl`: Auto-expiry (e.g. `7d`, `30d`, `12h`). Expired memories are purged on next access
+- `-p` (project): Project name for isolated DB (e.g. `-p B003`)
 
 ### Search memory
 ```
-python3 ~/.codex/skills/local-memory/memory.py search "<query>" [-n <limit>]
+python3 ~/.codex/skills/local-memory/memory.py search "<query>" \
+  [-n <limit>] [-t <tag-filter>] [--semantic] [-p PROJECT]
 ```
-Always search before asking the user to repeat themselves. Uses SQLite FTS5 full-text search (or LIKE fallback).
+- Uses FTS5 full-text search by default, LIKE fallback
+- `-t` filters by tag pattern, e.g. `-t "project:B003"` or `-t "type:result"`
+- `--semantic`: if `sentence-transformers` is installed, uses semantic search (cosine similarity)
+- Always search before asking the user to repeat themselves
 
 ### List memories
 ```
-python3 ~/.codex/skills/local-memory/memory.py list [-n <limit>] [-c <category>]
+python3 ~/.codex/skills/local-memory/memory.py list [-n 20] [-c CATEGORY] [-p PROJECT]
 ```
 
 ### Read a specific memory
 ```
-python3 ~/.codex/skills/local-memory/memory.py read <id>
+python3 ~/.codex/skills/local-memory/memory.py read <id> [-p PROJECT]
 ```
 
 ### View recent activity
 ```
-python3 ~/.codex/skills/local-memory/memory.py recent [-n <limit>]
+python3 ~/.codex/skills/local-memory/memory.py recent [-n 10] [-p PROJECT]
 ```
 
 ### Delete a memory
 ```
-python3 ~/.codex/skills/local-memory/memory.py forget <id>
+python3 ~/.codex/skills/local-memory/memory.py forget <id> [-p PROJECT]
 ```
 
 ### Database stats
 ```
-python3 ~/.codex/skills/local-memory/memory.py stats
+python3 ~/.codex/skills/local-memory/memory.py stats [-p PROJECT]
+```
+Shows: total count, category distribution, importance distribution, FTS5 status, date range, DB size.
+
+### Condensed context (for injection)
+```
+python3 ~/.codex/skills/local-memory/memory.py condense [-n 5] [-p PROJECT]
+```
+Generates a brief context summary combining high-importance (4+) and recent memories — ideal for injecting into LLM system prompts at session start.
+
+### Export
+```
+python3 ~/.codex/skills/local-memory/memory.py export [-f json|markdown] [-p PROJECT]
 ```
 
-### Export all memories
+### Import from JSON
 ```
-python3 ~/.codex/skills/local-memory/memory.py export -f json
-python3 ~/.codex/skills/local-memory/memory.py export -f markdown
+python3 ~/.codex/skills/local-memory/memory.py import -f export.json [-p PROJECT]
 ```
+
+### Purge expired memories
+```
+python3 ~/.codex/skills/local-memory/memory.py cleanup [--dry-run] [-p PROJECT]
+```
+
+### Session end hook
+```
+python3 ~/.codex/skills/local-memory/memory.py session-end [-p PROJECT]
+```
+Purges expired memories and reports total count. Call at session exit.
 
 ## Safety Rules
 
@@ -82,27 +126,36 @@ python3 ~/.codex/skills/local-memory/memory.py export -f markdown
 
 4. **Session boundaries.** When switching projects or starting a significant new task, save current context first.
 
-## Example Workflow
+## Examples
 
 ```
 # Session start — restore context
 python3 ~/.codex/skills/local-memory/memory.py recent -n 5
 
-# Search before asking
-python3 ~/.codex/skills/local-memory/memory.py search "deployment issue"
-
 # Save after completing a task
 python3 ~/.codex/skills/local-memory/memory.py save \
-  "Completed JWT auth refactor - middleware + token refresh + all tests passing" \
-  -k "project:auth-refactor" -c project -t "auth,jwt,refactor"
+  "Completed JWT auth refactor — middleware + token refresh + all tests passing" \
+  -k "project:auth-refactor" -c project -t "auth,jwt,refactor" -i 4
 
-# Save a discovery
-python3 ~/.codex/skills/local-memory/memory.py save \
-  "Surprising property: reads are 10x faster with index on updated_at" \
-  -k "discovery:sqlite-index" -c note -t "sqlite,performance"
-
-# Save user preference
+# Save a user preference
 python3 ~/.codex/skills/local-memory/memory.py save \
   "User prefers 2-space YAML, 4-space Python" \
-  -k "pref:indentation" -c preference -t "style,convention"
+  -k "pref:indentation" -c preference -t "style,convention" -i 5
+
+# Per-project memory
+python3 ~/.codex/skills/local-memory/memory.py -p B003 save \
+  "Analysis results: LDSC h2=0.15-0.25 across 3 MDD definitions" \
+  -k "analysis:ldsc-h2" -c pattern -t "project:B003,type:result" -i 4 --ttl 90d
+
+# Search with tag filter
+python3 ~/.codex/skills/local-memory/memory.py search "deployment issue" -t "project:my-app"
 ```
+
+## v1 → v2 Migration
+
+The v2.0 upgrade is backward-compatible. Existing v1 databases are automatically detected and migrated:
+- `importance` column added (default: 3)
+- `ttl` column added (default: NULL)
+- Project DBs are created automatically on `-p PROJECT` usage
+
+No manual migration needed.
