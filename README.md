@@ -15,6 +15,8 @@
   <code>bash install.sh</code> → Codex remembers everything. Done.
 </p>
 
+> **About this project:** 700 lines of Python. Zero dependencies. No server. No daemon. No Docker. No cloud. No API keys. No vector DB. Just a single SQLite file and one `memory.py` that ships with every Python installation. We believe agent memory should be a **tool**, not an infrastructure project. Two minutes from `git clone` to your first remembered fact.
+
 ---
 
 ## The Problem
