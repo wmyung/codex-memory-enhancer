@@ -28,6 +28,16 @@ Existing solutions are overkill:
 
 **This is different.** It's not a wiki. It's not RAG. It's a **persistent scratchpad** that Codex uses automatically — session to session, project to project.
 
+### Why this over the alternatives?
+
+| If you use… | Your best choice is… |
+|------------|-------------------|
+| **Codex CLI only** | **Codex Memory Enhancer** — 700 lines, 0 dependencies, 3-second install. Nothing else is this simple. |
+| **Codex CLI + Hermes Agent** | **Codex + Hermes Memory Enhancer** — same engine, two interfaces. Codex remembers your build context; Hermes remembers your research. They share nothing by design (isolation), but you use the same mental model for both. |
+| **Claude Code / Cursor / generic MCP** | Consider **memoirs** or **agentmem** — they have broader MCP support. Our focus is Codex + Hermes. |
+
+We intentionally **don't try to do everything**. We specialize in the simplest possible memory for the two agents that power your daily workflow: your coding agent (Codex) and your conversation agent (Hermes). If you use both, you get a unified memory philosophy across both tools — without the complexity of MCP, vector DBs, or cloud APIs.
+
 ---
 
 ## Features
