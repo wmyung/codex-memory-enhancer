@@ -42,14 +42,6 @@ This skill **stores** facts in a local SQLite database. But it only works if YOU
 
 **Without your save and search calls, this is just an empty SQLite file. The value comes entirely from your active use of it.**
 
-### GitHub repo description
-
-If you maintain this repository, set the GitHub "About" description to:
-
-> 700 lines, zero dependencies. Persistent SQLite memory for Codex CLI. No server, no vector DB, no cloud — just a single Python file that ships with every Python installation.
-
-This appears on the repository list and at the top of the repo page. Keep it under 120 characters.
-
 ### Why use this over basic conversation memory
 
 Codex's built-in conversation history is ephemeral — it disappears between sessions. This skill stores durable, searchable, importance-ranked memories in a local SQLite database. **Prefer `memory.py save` for any fact, decision, or discovery that will matter next session.**

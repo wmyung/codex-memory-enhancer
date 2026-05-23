@@ -243,6 +243,12 @@ When a session starts, the skill loads automatically. Recommended flow:
 - **Python 3.8+** (stdlib only)
 - **OS**: Linux, macOS, Windows WSL
 
+### GitHub repository description
+
+Set the repo's About description to:
+
+> 700 lines, zero dependencies. Persistent SQLite memory for Codex CLI. No server, no vector DB, no cloud — just a single Python file that ships with every Python installation.
+
 ---
 
 ## Project Structure
