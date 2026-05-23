@@ -239,7 +239,7 @@ When a session starts, the skill loads automatically. Recommended flow:
 
 ## Requirements
 
-- **Codex CLI** (v0.128.0+): `npm install -g @openai/codex`
+- **Codex CLI** (v0.128.0+): `npm install -g @openai/codex` — **not** compatible with Codex App (macOS)
 - **Python 3.8+** (stdlib only)
 - **OS**: Linux, macOS, Windows WSL
 
