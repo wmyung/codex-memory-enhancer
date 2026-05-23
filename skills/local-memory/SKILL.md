@@ -151,6 +151,56 @@ python3 ~/.codex/skills/local-memory/memory.py -p B003 save \
 python3 ~/.codex/skills/local-memory/memory.py search "deployment issue" -t "project:my-app"
 ```
 
+## L3 Layer — Tags + Relations + Graph Traversal
+
+L3 adds a knowledge graph layer on top of the same SQLite database. Use tags and typed relations to connect memories, then traverse or visualize the graph.
+
+### Setup
+
+```bash
+# Point L3 to the same DB as local-memory
+export L3_DB_PATH=~/.codex/skills/local-memory/memory.sqlite3
+```
+
+### Commands
+
+```bash
+# Tag a memory (use its URI or key)
+python3 ~/.codex/skills/local-memory/l3.py tag add "decision:use-fastapi" "architecture"
+
+# Relate two nodes
+python3 ~/.codex/skills/local-memory/l3.py relate \
+  "decision:use-fastapi" "project:auth-refactor" informs
+
+# Search by tag
+python3 ~/.codex/skills/local-memory/l3.py search tag architecture
+
+# Graph traversal
+python3 ~/.codex/skills/local-memory/l3.py trace "decision:use-fastapi" --depth 3
+
+# Generate interactive HTML graph
+python3 ~/.codex/skills/local-memory/l3_graph.py graph.html
+
+# Statistics
+python3 ~/.codex/skills/local-memory/l3.py stats
+```
+
+### Relation types
+
+| Type | Meaning |
+|------|---------|
+| `informs` | One finding influences/guides another |
+| `supports` | Evidence supports a claim |
+| `contradicts` | Conflicts or contradicts |
+| `extends` | Builds upon previous work |
+| `related_to` | General association (default) |
+
+### How it works
+
+L3 creates three tables (`l3_tags`, `l3_node_tags`, `l3_relations`) alongside the existing `memories` table in the same SQLite file. Your existing memories are untouched, but they become nodes in a graph you can tag, relate, and traverse.
+
+The HTML graph viewer (`l3_graph.py`) renders a D3.js force-directed graph in the browser — click any node to see its tags and connections, or type to filter.
+
 ## v1 → v2 Migration
 
 The v2.0 upgrade is backward-compatible. Existing v1 databases are automatically detected and migrated:

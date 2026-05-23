@@ -103,6 +103,28 @@ Patterns blocked: `sk-*` (OpenAI), `ghp_*` (GitHub), `AKIA*` (AWS), `xox[baprs]-
 ### 🔬 Optional semantic search
 If `sentence-transformers` is installed, `search --semantic` uses cosine similarity for semantic matching.
 
+### 🧩 L3 Knowledge Graph Layer
+Connect memories with typed relations, search by cross-cutting tags, trace dependency chains, and visualize the entire graph in your browser.
+
+```bash
+# Point L3 to the same DB
+export L3_DB_PATH=~/.codex/skills/local-memory/memory.sqlite3
+
+# Tag a memory
+python3 ~/.codex/skills/local-memory/l3.py tag add "project:auth-refactor" "architecture"
+
+# Relate two memories
+python3 ~/.codex/skills/local-memory/l3.py relate "project:auth-refactor" "decision:use-fastapi" informs
+
+# Trace connections
+python3 ~/.codex/skills/local-memory/l3.py trace "project:auth-refactor" --depth 3
+
+# Generate interactive HTML graph
+python3 ~/.codex/skills/local-memory/l3_graph.py graph.html
+```
+
+L3 creates three tables (`l3_tags`, `l3_node_tags`, `l3_relations`) alongside your existing `memories` table in the same SQLite file. Zero schema changes to your data.
+
 ### 🔄 Portable
 ```bash
 # Export
@@ -232,7 +254,9 @@ codex-memory-enhancer/
 ├── LICENSE                       ← MIT
 ├── skills/local-memory/
 │   ├── SKILL.md                  ← Codex skill definition
-│   └── memory.py                 ← Memory engine (stdlib only)
+│   ├── memory.py                 ← Memory engine (stdlib only)
+│   ├── l3.py                     ← L3 knowledge graph CLI
+│   └── l3_graph.py               ← L3 interactive HTML graph viewer
 ├── scripts/
 │   └── codex-memory              ← Optional wrapper script
 ├── config/
@@ -249,7 +273,9 @@ codex-memory-enhancer/
 | Default DB | `~/.codex/skills/local-memory/memory.sqlite3` |
 | Per-project DBs | `~/.codex/skills/local-memory/projects/<project>.sqlite3` |
 | Skill definition | `~/.codex/skills/local-memory/SKILL.md` |
-| Script | `~/.codex/skills/local-memory/memory.py` |
+| Memory script | `~/.codex/skills/local-memory/memory.py` |
+| L3 CLI | `~/.codex/skills/local-memory/l3.py` |
+| L3 graph viewer | `~/.codex/skills/local-memory/l3_graph.py` |
 
 ---
 
@@ -268,7 +294,7 @@ No manual migration needed. Run `python3 memory.py stats` to verify.
 
 - [ ] Interactive `browse` mode
 - [ ] Batch tag editor
-- [ ] Obsidian sync
+- [ ] L3 graph web app (auto-refresh)
 - [ ] Richer semantic search with caching
 - [ ] Memory consolidation (merge duplicates)
 
