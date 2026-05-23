@@ -255,8 +255,8 @@ codex-memory-enhancer/
 ├── skills/local-memory/
 │   ├── SKILL.md                  ← Codex skill definition
 │   ├── memory.py                 ← Memory engine (stdlib only)
-│   ├── l3.py                     ← L3 knowledge graph CLI
-│   └── l3_graph.py               ← L3 interactive HTML graph viewer
+│   ├── l3.py                     ← L3 CLI
+│   └── l3_graph.py               ← HTML graph generator
 ├── scripts/
 │   └── codex-memory              ← Optional wrapper script
 ├── config/
