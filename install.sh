@@ -1,5 +1,5 @@
 #!/bin/bash
-# codex-memory-enhancer install.sh
+# codex-cli-memory-enhancer install.sh
 # Installs the local-memory skill for Codex CLI.
 # No server, no daemon, no pip install — pure Python stdlib + SQLite.
 
@@ -8,7 +8,7 @@ set -euo pipefail
 SKILL_DIR="$HOME/.codex/skills/local-memory"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-echo "🧠 Codex Memory Enhancer v2.0 — Install"
+echo "🧠 Codex CLI Memory Enhancer v2.0 — Install"
 echo ""
 
 # 1. Copy skill files

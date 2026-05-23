@@ -1,6 +1,6 @@
 #!/bin/bash
 # codex-memory: Codex wrapper with automatic memory context restoration
-# Installed by: codex-memory-enhancer install.sh
+# Installed by: codex-cli-memory-enhancer install.sh
 # Usage: codex-memory [args...]
 
 MEMORY_SCRIPT="$HOME/.codex/skills/local-memory/memory.py"

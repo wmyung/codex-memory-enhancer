@@ -5,7 +5,7 @@
   <img src="https://img.shields.io/badge/server-none-success"/>
 </p>
 
-<h1 align="center">🧠 Codex Memory Enhancer</h1>
+<h1 align="center">🧠 Codex CLI Memory Enhancer</h1>
 <p align="center">
   <b>Persistent, always-on memory for OpenAI Codex CLI</b> (not Codex App).<br>
   No server. No daemon. No pip install. No vector DB. Pure Python stdlib + SQLite.
@@ -34,7 +34,7 @@ Existing solutions are overkill:
 
 | If you use… | Your best choice is… |
 |------------|-------------------|
-| **Codex CLI only** | **Codex Memory Enhancer** — 700 lines, 0 dependencies, 3-second install. Nothing else is this simple. |
+| **Codex CLI only** | **Codex CLI Memory Enhancer** — 700 lines, 0 dependencies, 3-second install. Nothing else is this simple. |
 | **Codex CLI + Hermes Agent** | **Codex + Hermes Memory Enhancer** — same engine, two interfaces. Codex remembers your build context; Hermes remembers your research. They share nothing by design (isolation), but you use the same mental model for both. |
 | **Claude Code / Cursor / generic MCP** | Consider **memoirs** or **agentmem** — they have broader MCP support. Our focus is Codex + Hermes. |
 
@@ -141,7 +141,7 @@ python3 memory.py import -f memories.json
 
 ```bash
 git clone <repo-url>
-cd codex-memory-enhancer
+cd codex-cli-memory-enhancer
 bash install.sh
 ```
 
@@ -248,7 +248,7 @@ When a session starts, the skill loads automatically. Recommended flow:
 ## Project Structure
 
 ```
-codex-memory-enhancer/
+codex-cli-memory-enhancer/
 ├── install.sh                    ← One-shot install
 ├── README.md                     ← This file
 ├── LICENSE                       ← MIT

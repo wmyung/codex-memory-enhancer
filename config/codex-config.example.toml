@@ -1,4 +1,4 @@
-# Codex Memory Enhancer — Optional Profile Configuration
+# Codex CLI Memory Enhancer — Optional Profile Configuration
 # Add this to ~/.codex/config.toml (or merge into your existing config)
 #
 # Then launch: codex -p memory
