@@ -266,6 +266,7 @@ PRs welcome. Ideas welcome.
 
 ## Related
 
+- **[Hermes Memory Enhancer](https://github.com/wmyung/hermes-memory-enhancer)** — the same memory system, integrated as a Hermes Agent plugin
 - **[Hermes Agent](https://github.com/NousResearch/hermes-agent)** — multi-provider agent framework with built-in Memory Enhancer plugin
 - **[Codex CLI](https://github.com/openai/codex)** — OpenAI's autonomous coding agent CLI
 - **[SQLite FTS5](https://www.sqlite.org/fts5.html)** — the search engine behind it all. No vector DB needed.
