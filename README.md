@@ -7,7 +7,7 @@
 
 <h1 align="center">🧠 Codex CLI Memory Enhancer</h1>
 <p align="center">
-  <b>Persistent memory for Codex CLI</b> — also works with Codex App via direct Python execution.<br>
+  <b>Persistent, always-on memory for OpenAI Codex CLI.</b><br>
   No server. No daemon. No pip install. No vector DB. Pure Python stdlib + SQLite.
 </p>
 
@@ -239,8 +239,7 @@ When a session starts, the skill loads automatically. Recommended flow:
 
 ## Requirements
 
-- **Codex CLI** (v0.128.0+): `npm install -g @openai/codex` (for `$local-memory` auto-invoke via skill system)
-- **Codex App** (macOS): works via direct `python3 memory.py` execution — no skill auto-invoke, but all commands work
+- **Codex CLI** (v0.128.0+): `npm install -g @openai/codex`
 - **Python 3.8+** (stdlib only)
 - **OS**: Linux, macOS, Windows WSL
 
