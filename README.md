@@ -104,7 +104,7 @@ Patterns blocked: `sk-*` (OpenAI), `ghp_*` (GitHub), `AKIA*` (AWS), `xox[baprs]-
 If `sentence-transformers` is installed, `search --semantic` uses cosine similarity for semantic matching.
 
 ### 🧩 L3 Knowledge Graph Layer
-Connect memories with typed relations, search by cross-cutting tags, trace dependency chains, and visualize the entire graph in your browser.
+Connect memories with typed relations (semantic + temporal), search by cross-cutting tags, trace dependency chains, and visualize the entire graph in your browser.
 
 ```bash
 # Point L3 to the same DB
@@ -116,14 +116,25 @@ python3 ~/.codex/skills/local-memory/l3.py tag add "project:auth-refactor" "arch
 # Relate two memories
 python3 ~/.codex/skills/local-memory/l3.py relate "project:auth-refactor" "decision:use-fastapi" informs
 
-# Trace connections
+# Relate with temporal ordering
+python3 ~/.codex/skills/local-memory/l3.py relate "plan:research" "analysis:conducted" precedes
+
+# Trace connections (optionally filter by relation type)
 python3 ~/.codex/skills/local-memory/l3.py trace "project:auth-refactor" --depth 3
+python3 ~/.codex/skills/local-memory/l3.py trace "project:auth-refactor" precedes
+
+# Temporal timeline — follow precedes/follows chains
+python3 ~/.codex/skills/local-memory/l3.py timeline "plan:research"
 
 # Generate interactive HTML graph
 python3 ~/.codex/skills/local-memory/l3_graph.py graph.html
 ```
 
 L3 creates three tables (`l3_tags`, `l3_node_tags`, `l3_relations`) alongside your existing `memories` table in the same SQLite file. Zero schema changes to your data.
+
+**Relation types:**
+- **Semantic:** `informs`, `supports`, `contradicts`, `extends`, `built-from`, `related_to`
+- **Temporal:** `precedes` (source before target), `follows` (source after target), `contemporaneous` (same time period)
 
 ### 🔄 Portable
 ```bash
