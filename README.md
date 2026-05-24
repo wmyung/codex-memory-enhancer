@@ -276,9 +276,19 @@ PRs welcome. Ideas welcome.
 
 ---
 
+## Sibling Projects
+
+codex-cli-memory-enhancer is part of a zero-dependency agent memory tool family:
+
+| Project | For | Purpose |
+|---|---|---|
+| **codex-cli-memory-enhancer (this)** | Codex CLI | Persistent memory, per-project DBs, importance scoring |
+| [Hermes Memory Enhancer](https://github.com/wmyung/hermes-memory-enhancer) | Hermes Agent | Same engine, plugin-integrated with semantic search |
+| [skillctl](https://github.com/wmyung/skillctl) | Hermes Agent | Skill context manager — trim `available_skills` |
+| [Hermes SQLite Toolkit](https://github.com/wmyung/hermes-sqlite-toolkit) | Hermes Agent | Tool cache, artifact registry, decision log |
+
 ## Related
 
-- **[Hermes Memory Enhancer](https://github.com/wmyung/hermes-memory-enhancer)** — the same memory system, integrated as a Hermes Agent plugin
 - **[Hermes Agent](https://github.com/NousResearch/hermes-agent)** — multi-provider agent framework with built-in Memory Enhancer plugin
 - **[Codex CLI](https://github.com/openai/codex)** — OpenAI's autonomous coding agent CLI
 - **[SQLite FTS5](https://www.sqlite.org/fts5.html)** — the search engine behind it all. No vector DB needed.
