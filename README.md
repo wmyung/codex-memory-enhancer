@@ -8,7 +8,8 @@
 <h1 align="center">🧠 Codex Memory Enhancer</h1>
 <p align="center">
   <b>Persistent, always-on memory for OpenAI Codex CLI.</b><br>
-  No server. No daemon. No pip install. No vector DB. Pure Python stdlib + SQLite.
+  No server. No daemon. No pip install. No vector DB. Pure Python stdlib + SQLite.<br>
+  <small>Keywords: codex-cli-memory-enhancer, codex-memory, sqlite-memory, agent-memory, codex-cli, persistent-memory, zero-dependency, llm-memory, codex-skills</small>
 </p>
 
 <p align="center">
